@@ -15,7 +15,7 @@ pip install -r requirements.txt
 ## Usage
 
 ```bash
-python main.py 
+python twitter-auto-reply.py 
                 --username "your-twitter-username" 
                 --password "your-twitter-password" 
                 --otp "your-one-time-password-if-you-use" 

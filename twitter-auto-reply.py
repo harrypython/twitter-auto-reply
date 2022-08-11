@@ -7,6 +7,7 @@ from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.common.by import By
 import pyotp as pyotp
 import argparse
+from loguru import logger
 
 
 def get_otp(k):
@@ -33,6 +34,7 @@ def search_and_reply():
     options = FirefoxOptions()
     if args.headless:
         options.add_argument("--headless")
+        logger.info("Running headless browser")
     s = Service(GeckoDriverManager().install())
     driver = webdriver.Firefox(options=options, service=s)
     driver.get("https://www.twitter.com/login")
@@ -44,12 +46,14 @@ def search_and_reply():
     driver.find_element(By.XPATH, "//input[@name='password']").send_keys(args.password)
     driver.find_element(By.XPATH, "//span[text()='Log in']").click()
 
+
     if args.otp is not None:
         time.sleep(5)
         driver.find_element(By.XPATH, "//input[@name='text']").send_keys(get_otp(args.otp))
         driver.find_element(By.XPATH, "//span[text()='Next']").click()
 
     time.sleep(5)
+    logger.info("Successfully logged in")
 
     q = '{} min_replies:{} min_faves:{} min_retweets:{} -filter:links -filter:replies'.format(
         args.search,
@@ -58,6 +62,7 @@ def search_and_reply():
         args.min_retweets
     )
 
+    logger.info("Doing search")
     search_string = 'https://twitter.com/search?q={}&src=typed_query&f=live'.format(q)
     driver.get(search_string)
     time.sleep(12)
@@ -66,8 +71,13 @@ def search_and_reply():
     driver.find_element(By.XPATH, "//div[@contenteditable='true']").send_keys(" ")
     driver.find_element(By.XPATH, "//div[@contenteditable='true']").send_keys(args.message)
     time.sleep(3)
+
     driver.find_element(By.XPATH, "//div[@data-testid='tweetButton']").click()
+
+    logger.info("Reply posted")
     driver.close()
+
+    logger.info("Bye!")
 
 
 if __name__ == '__main__':

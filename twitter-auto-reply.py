@@ -1,10 +1,10 @@
-import time
-
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.firefox.service import Service
 from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as exp_cond
 import pyotp as pyotp
 import argparse
 from loguru import logger
@@ -28,6 +28,7 @@ def search_and_reply():
     parser.add_argument("-mr", "--min_replies", type=int, default=0, help="Minimal replies")
     parser.add_argument("-mf", "--min_faves", type=int, default=0, help="Minimal favorites")
     parser.add_argument("-mrt", "--min_retweets", type=int, default=0, help="Minimal retweets")
+    parser.add_argument("-e", "--exclude_word", type=str, help="Exclude word")
 
     args = parser.parse_args()
 
@@ -38,21 +39,20 @@ def search_and_reply():
     s = Service(GeckoDriverManager().install())
     driver = webdriver.Firefox(options=options, service=s)
     driver.get("https://www.twitter.com/login")
-    time.sleep(5)
+    driver.maximize_window()
+    wait = WebDriverWait(driver, timeout=10, poll_frequency=3)
 
-    driver.find_element(By.XPATH, "//input[@name='text']").send_keys(args.username)
-    driver.find_element(By.XPATH, "//span[text()='Next']").click()
-    time.sleep(5)
-    driver.find_element(By.XPATH, "//input[@name='password']").send_keys(args.password)
-    driver.find_element(By.XPATH, "//span[text()='Log in']").click()
-
+    wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//input[@name='text']"))).send_keys(args.username)
+    wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//span[text()='Next']"))).click()
+    wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//input[@name='password']"))).send_keys(args.password)
+    wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//span[text()='Log in']"))).click()
 
     if args.otp is not None:
-        time.sleep(5)
-        driver.find_element(By.XPATH, "//input[@name='text']").send_keys(get_otp(args.otp))
-        driver.find_element(By.XPATH, "//span[text()='Next']").click()
+        wait.until(
+            exp_cond.visibility_of_element_located((By.XPATH, "//input[@name='text']"))
+        ).send_keys(get_otp(args.otp))
+        wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//span[text()='Next']"))).click()
 
-    time.sleep(5)
     logger.info("Successfully logged in")
 
     q = '{} min_replies:{} min_faves:{} min_retweets:{} -filter:links -filter:replies'.format(
@@ -62,17 +62,19 @@ def search_and_reply():
         args.min_retweets
     )
 
+    if args.exclude_word is not None:
+        q = q + " -{}".format(args.exclude_word)
+
     logger.info("Doing search")
     search_string = 'https://twitter.com/search?q={}&src=typed_query&f=live'.format(q)
     driver.get(search_string)
-    time.sleep(12)
-    driver.find_element(By.XPATH, "//div[@data-testid='reply']").click()
-    time.sleep(1)
-    driver.find_element(By.XPATH, "//div[@contenteditable='true']").send_keys(" ")
-    driver.find_element(By.XPATH, "//div[@contenteditable='true']").send_keys(args.message)
-    time.sleep(3)
+    wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//div[@data-testid='reply']"))).click()
+    wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//div[@contenteditable='true']"))).send_keys(" ")
+    wait.until(
+        exp_cond.visibility_of_element_located((By.XPATH, "//div[@contenteditable='true']"))
+    ).send_keys(args.message)
 
-    driver.find_element(By.XPATH, "//div[@data-testid='tweetButton']").click()
+    wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//div[@data-testid='tweetButton']"))).click()
 
     logger.info("Reply posted")
     driver.close()

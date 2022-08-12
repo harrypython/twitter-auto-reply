@@ -25,6 +25,7 @@ python twitter-auto-reply.py
                 --min_faves 0 
                 --min_retweets 0
                 --headless / --no-headless #browser headless
+                --exclude_word "word-that-will-not-be-show-in-the-results"
 ```
 
 ## Contributing

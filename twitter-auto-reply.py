@@ -99,7 +99,9 @@ def search_and_reply():
         quit()
 
     try:
+        user_replied = wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//div[@dir='ltr']"))).text
         wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//div[@data-testid='tweetButton']"))).click()
+        logger.info("Replied to @{}.".format(user_replied))
     except selenium.common.exceptions.TimeoutException:
         logger.error("Reply error! Sorry!")
         driver.get_screenshot_as_file('error-{}.png'.format(datetime.now().strftime('%Y-%m-%d-%H_%M_%S')))

@@ -31,13 +31,12 @@ def search_and_reply():
         if bool(args['headless']):
             options.add_argument("--headless")
             logger.info("Running headless browser")
-        driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()))
+        driver = webdriver.Firefox(options=options, service=FirefoxService(GeckoDriverManager().install()))
         driver.get("https://www.twitter.com/login")
         driver.maximize_window()
         wait = WebDriverWait(driver, timeout=10, poll_frequency=5)
     except selenium.common.exceptions.TimeoutException:
         logger.error("Browser or webdriver error! Sorry!")
-        driver.get_screenshot_as_file('error-{}.png'.format(datetime.now().strftime('%Y-%m-%d-%H_%M_%S')))
         driver.close()
         quit()
 
@@ -77,13 +76,22 @@ def search_and_reply():
 
     logger.info("Doing search")
     try:
-        search_string = 'https://twitter.com/search?q={}&src=typed_query&f=live'.format(q)
-        driver.get(search_string)
+        searchbox_input = "//input[@data-testid='SearchBox_Search_Input']"
+        # fill search box
+        wait.until(exp_cond.visibility_of_element_located((By.XPATH, searchbox_input))).send_keys(q)
+
+        # submit search
+        wait.until(exp_cond.visibility_of_element_located((By.XPATH, searchbox_input))).submit()
+
+        # click in lasted tab
+        tab_lasted = "//div[@data-testid='ScrollSnap-List']//a[@tabindex='-1']"
+        wait.until(exp_cond.visibility_of_element_located((By.XPATH, tab_lasted))).click()
+
+        # click reply in the first result
+        content_editables = "//div[@contenteditable='true']"
         wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//div[@data-testid='reply']"))).click()
-        wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//div[@contenteditable='true']"))).send_keys(" ")
-        wait.until(
-            exp_cond.visibility_of_element_located((By.XPATH, "//div[@contenteditable='true']"))
-        ).send_keys(args['message'])
+        wait.until(exp_cond.visibility_of_element_located((By.XPATH, content_editables))).send_keys(" ")
+        wait.until(exp_cond.visibility_of_element_located((By.XPATH, content_editables))).send_keys(args['message'])
     except selenium.common.exceptions.TimeoutException:
         logger.error("Search error! Sorry!")
         driver.get_screenshot_as_file('error-{}.png'.format(datetime.now().strftime('%Y-%m-%d-%H_%M_%S')))

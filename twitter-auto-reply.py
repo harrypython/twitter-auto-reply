@@ -1,5 +1,6 @@
 import json
 import argparse
+import os
 from datetime import datetime
 import selenium.common.exceptions
 from selenium import webdriver
@@ -31,7 +32,8 @@ def search_and_reply():
         if bool(args['headless']):
             options.add_argument("--headless")
             logger.info("Running headless browser")
-        driver = webdriver.Firefox(options=options, service=FirefoxService(GeckoDriverManager().install()))
+        driver = webdriver.Firefox(options=options,
+                                   service=FirefoxService(GeckoDriverManager().install(), log_path=os.devnull))
         driver.get("https://www.twitter.com/login")
         driver.maximize_window()
         wait = WebDriverWait(driver, timeout=10, poll_frequency=5)

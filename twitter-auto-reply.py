@@ -1,3 +1,4 @@
+import selenium.common.exceptions
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.firefox.service import Service
@@ -32,28 +33,41 @@ def search_and_reply():
 
     args = parser.parse_args()
 
-    options = FirefoxOptions()
-    if args.headless:
-        options.add_argument("--headless")
-        logger.info("Running headless browser")
-    s = Service(GeckoDriverManager().install())
-    driver = webdriver.Firefox(options=options, service=s)
-    driver.get("https://www.twitter.com/login")
-    driver.maximize_window()
-    wait = WebDriverWait(driver, timeout=10, poll_frequency=3)
+    try:
+        options = FirefoxOptions()
+        if args.headless:
+            options.add_argument("--headless")
+            logger.info("Running headless browser")
+        s = Service(GeckoDriverManager().install())
+        driver = webdriver.Firefox(options=options, service=s)
+        driver.get("https://www.twitter.com/login")
+        driver.maximize_window()
+        wait = WebDriverWait(driver, timeout=10, poll_frequency=5)
+    except selenium.common.exceptions.TimeoutException as to:
+        logger.error("Browser or webdriver error! Sorry!")
+        driver.close()
+        quit()
 
-    wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//input[@name='text']"))).send_keys(args.username)
-    wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//span[text()='Next']"))).click()
-    wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//input[@name='password']"))).send_keys(args.password)
-    wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//span[text()='Log in']"))).click()
-
-    if args.otp is not None:
-        wait.until(
-            exp_cond.visibility_of_element_located((By.XPATH, "//input[@name='text']"))
-        ).send_keys(get_otp(args.otp))
+    try:
+        wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//input[@name='text']"))).send_keys(args.username)
         wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//span[text()='Next']"))).click()
+        wait.until(
+            exp_cond.visibility_of_element_located((By.XPATH, "//input[@name='password']"))
+        ).send_keys(args.password)
+        wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//span[text()='Log in']"))).click()
 
-    logger.info("Successfully logged in")
+        if args.otp is not None:
+            wait.until(
+                exp_cond.visibility_of_element_located((By.XPATH, "//input[@name='text']"))
+            ).send_keys(get_otp(args.otp))
+            wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//span[text()='Next']"))).click()
+
+        if bool(wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//span[text()='Home']")))):
+            logger.info("Successfully logged in")
+    except selenium.common.exceptions.TimeoutException as to:
+        logger.error("Login error! Sorry!")
+        driver.close()
+        quit()
 
     q = '{} min_replies:{} min_faves:{} min_retweets:{} -filter:links -filter:replies'.format(
         args.search,
@@ -66,15 +80,25 @@ def search_and_reply():
         q = q + " -{}".format(args.exclude_word)
 
     logger.info("Doing search")
-    search_string = 'https://twitter.com/search?q={}&src=typed_query&f=live'.format(q)
-    driver.get(search_string)
-    wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//div[@data-testid='reply']"))).click()
-    wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//div[@contenteditable='true']"))).send_keys(" ")
-    wait.until(
-        exp_cond.visibility_of_element_located((By.XPATH, "//div[@contenteditable='true']"))
-    ).send_keys(args.message)
+    try:
+        search_string = 'https://twitter.com/search?q={}&src=typed_query&f=live'.format(q)
+        driver.get(search_string)
+        wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//div[@data-testid='reply']"))).click()
+        wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//div[@contenteditable='true']"))).send_keys(" ")
+        wait.until(
+            exp_cond.visibility_of_element_located((By.XPATH, "//div[@contenteditable='true']"))
+        ).send_keys(args.message)
+    except selenium.common.exceptions.TimeoutException as to:
+        logger.error("Search error! Sorry!")
+        driver.close()
+        quit()
 
-    wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//div[@data-testid='tweetButton']"))).click()
+    try:
+        wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//div[@data-testid='tweetButton']"))).click()
+    except selenium.common.exceptions.TimeoutException as to:
+        logger.error("Reply error! Sorry!")
+        driver.close()
+        quit()
 
     logger.info("Reply posted")
     driver.close()

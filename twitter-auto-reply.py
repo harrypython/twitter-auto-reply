@@ -79,7 +79,7 @@ def search_and_reply():
     try:
         search_string = 'https://twitter.com/search?q={}&src=typed_query&f=live'.format(q)
         driver.get(search_string)
-        wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//div[@data-testid='reply']"))).click()
+        wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//div[@data-testid='X-reply']"))).click()
         wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//div[@contenteditable='true']"))).send_keys(" ")
         wait.until(
             exp_cond.visibility_of_element_located((By.XPATH, "//div[@contenteditable='true']"))

@@ -1,9 +1,10 @@
 import json
 import argparse
+from datetime import datetime
 import selenium.common.exceptions
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
-from selenium.webdriver.firefox.service import Service
+from selenium.webdriver.firefox.service import Service as FirefoxService
 from webdriver_manager.firefox import GeckoDriverManager
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -30,13 +31,13 @@ def search_and_reply():
         if bool(args['headless']):
             options.add_argument("--headless")
             logger.info("Running headless browser")
-        s = Service(GeckoDriverManager().install())
-        driver = webdriver.Firefox(options=options, service=s)
+        driver = webdriver.Firefox(service=FirefoxService(GeckoDriverManager().install()))
         driver.get("https://www.twitter.com/login")
         driver.maximize_window()
         wait = WebDriverWait(driver, timeout=10, poll_frequency=5)
-    except selenium.common.exceptions.TimeoutException as to:
+    except selenium.common.exceptions.TimeoutException:
         logger.error("Browser or webdriver error! Sorry!")
+        driver.get_screenshot_as_file('error-{}.png'.format(datetime.now().strftime('%Y-%m-%d-%H_%M_%S')))
         driver.close()
         quit()
 
@@ -60,6 +61,7 @@ def search_and_reply():
             logger.info("Successfully logged in")
     except selenium.common.exceptions.TimeoutException:
         logger.error("Login error! Sorry!")
+        driver.get_screenshot_as_file('error-{}.png'.format(datetime.now().strftime('%Y-%m-%d-%H_%M_%S')))
         driver.close()
         quit()
 
@@ -84,6 +86,7 @@ def search_and_reply():
         ).send_keys(args['message'])
     except selenium.common.exceptions.TimeoutException:
         logger.error("Search error! Sorry!")
+        driver.get_screenshot_as_file('error-{}.png'.format(datetime.now().strftime('%Y-%m-%d-%H_%M_%S')))
         driver.close()
         quit()
 
@@ -91,6 +94,7 @@ def search_and_reply():
         wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//div[@data-testid='tweetButton']"))).click()
     except selenium.common.exceptions.TimeoutException:
         logger.error("Reply error! Sorry!")
+        driver.get_screenshot_as_file('error-{}.png'.format(datetime.now().strftime('%Y-%m-%d-%H_%M_%S')))
         driver.close()
         quit()
 

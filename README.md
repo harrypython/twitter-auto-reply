@@ -4,8 +4,8 @@ Reply the first tweet result from a search using Firefox and Selenium.
 
 ## Clone the repo:
 ```bash 
-git clone https://github.com/harrypython/witter-auto-reply.git
-cd witter-auto-reply 
+git clone https://github.com/harrypython/twitter-auto-reply.git
+cd twitter-auto-reply
 ```  
 ## Install the requirements: 
 ```bash 

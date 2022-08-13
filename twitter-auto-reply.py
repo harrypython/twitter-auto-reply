@@ -20,6 +20,7 @@ def get_otp(k):
 
 
 def search_and_reply():
+    logger.add("logs/file_{}.log".format(datetime.now().strftime('%Y-%m-%d')))
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', help='Load settings from file in json format.')
     conf_args = parser.parse_args()
@@ -103,6 +104,13 @@ def search_and_reply():
     try:
         user_replied = wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//div[@dir='ltr']"))).text
         wait.until(exp_cond.visibility_of_element_located((By.XPATH, "//div[@data-testid='tweetButton']"))).click()
+    except selenium.common.exceptions.TimeoutException:
+        logger.error("Reply error! Sorry!")
+        driver.get_screenshot_as_file('error-{}.png'.format(datetime.now().strftime('%Y-%m-%d-%H_%M_%S')))
+        driver.close()
+        quit()
+
+    try:
         wait.until(exp_cond.visibility_of_element_located((By.XPATH, searchbox_input))).clear()
         wait.until(exp_cond.visibility_of_element_located((By.XPATH, searchbox_input))).send_keys(
             "(from:{}) ({})".format(args["username"], user_replied)
@@ -113,7 +121,7 @@ def search_and_reply():
         url_reply = wait.until(exp_cond.visibility_of_element_located((By.XPATH, string_time))).get_attribute('href')
         logger.info("Replied link: {}.".format(url_reply))
     except selenium.common.exceptions.TimeoutException:
-        logger.error("Reply error! Sorry!")
+        logger.error("Link error! Sorry!")
         driver.get_screenshot_as_file('error-{}.png'.format(datetime.now().strftime('%Y-%m-%d-%H_%M_%S')))
         driver.close()
         quit()
